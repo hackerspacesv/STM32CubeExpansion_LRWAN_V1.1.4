@@ -395,7 +395,13 @@ bool RegionAU915ChanMaskSet( ChanMaskSetParams_t* chanMaskSet )
     // Check the number of active channels
     // According to ACMA regulation, we require at least 20 125KHz channels, if
     // the node shall utilize 125KHz channels.
+    // Note: For El Salvador we need to lower the number of channels to 8
+    // to support The Things Network Gateways
+#ifdef REGION_SV915
+    if( ( nbChannels < 8 ) &&
+#elif REGION_AU915
     if( ( nbChannels < 20 ) &&
+#endif
         ( nbChannels > 0 ) )
     {
         return false;

@@ -53,6 +53,12 @@
 #include "vcom.h"
 #include "version.h"
 
+/* Region specific includes --------------------------------------------------*/
+#include "RegionCommon.h"
+#ifdef REGION_AU915
+#include "RegionAU915.h"
+#endif
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
@@ -162,6 +168,21 @@ static  LoRaParam_t LoRaParamInit= {LORAWAN_ADR_STATE,
                                     LORAWAN_DEFAULT_DATA_RATE,  
                                     LORAWAN_PUBLIC_NETWORK,
                                     JOINREQ_NBTRIALS};
+#ifdef REGION_AU915
+// TTN Gateway listens on Channels 8-15 on AU915 region
+uint16_t ttn_channel_mask[6] = {
+  0xFF00,
+  0x0000,
+  0x0000,
+  0x0000,
+  0x0000,
+  0x0000
+};
+static ChanMaskSetParams_t ChanMaskTTNParams = {
+  ttn_channel_mask,
+  CHANNELS_MASK
+};
+#endif
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -192,6 +213,17 @@ int main( void )
   
   /* Configure the Lora Stack*/
   LORA_Init( &LoRaMainCallbacks, &LoRaParamInit);
+
+  /* Set region specific configurations */
+#ifdef REGION_AU915
+
+  // TheThingsNetwork uses Subband 1
+  if(RegionAU915ChanMaskSet(&ChanMaskTTNParams)) {
+    PRINTF("Channel Mask for TTN AU915 correctly set.\n\r");
+  } else {
+    PRINTF("Channel Mask for TTN AU915 could not be set.\n\r");
+  }
+#endif
   
   PRINTF("VERSION: %X\n\r", VERSION);
   
@@ -259,7 +291,7 @@ static void Send( void )
 
 #ifdef CAYENNE_LPP
   uint8_t cchannel=0;
-  temperature = ( int16_t )( sensor_data.temperature * 10 );     /* in °C * 10 */
+  temperature = ( int16_t )( sensor_data.temperature * 10 );     /* in  C * 10 */
   pressure    = ( uint16_t )( sensor_data.pressure * 100 / 10 );  /* in hPa / 10 */
   humidity    = ( uint16_t )( sensor_data.humidity * 2 );        /* in %*2     */
   uint32_t i = 0;
@@ -291,7 +323,7 @@ static void Send( void )
 #endif  /* REGION_XX915 */
 #else  /* not CAYENNE_LPP */
 
-  temperature = ( int16_t )( sensor_data.temperature * 100 );     /* in °C * 100 */
+  temperature = ( int16_t )( sensor_data.temperature * 100 );     /* in  C * 100 */
   pressure    = ( uint16_t )( sensor_data.pressure * 100 / 10 );  /* in hPa / 10 */
   humidity    = ( uint16_t )( sensor_data.humidity * 10 );        /* in %*10     */
   latitude = sensor_data.latitude;
@@ -303,17 +335,20 @@ static void Send( void )
   AppData.Port = LORAWAN_APP_PORT;
 
 #if defined( REGION_US915 ) || defined( REGION_US915_HYBRID ) || defined ( REGION_AU915 )
-  AppData.Buff[i++] = AppLedStateOn;
-  AppData.Buff[i++] = ( pressure >> 8 ) & 0xFF;
-  AppData.Buff[i++] = pressure & 0xFF;
-  AppData.Buff[i++] = ( temperature >> 8 ) & 0xFF;
-  AppData.Buff[i++] = temperature & 0xFF;
-  AppData.Buff[i++] = ( humidity >> 8 ) & 0xFF;
-  AppData.Buff[i++] = humidity & 0xFF;
-  AppData.Buff[i++] = batteryLevel;
-  AppData.Buff[i++] = 0;
-  AppData.Buff[i++] = 0;
-  AppData.Buff[i++] = 0;
+//  AppData.Buff[i++] = AppLedStateOn;
+//  AppData.Buff[i++] = ( pressure >> 8 ) & 0xFF;
+//  AppData.Buff[i++] = pressure & 0xFF;
+//  AppData.Buff[i++] = ( temperature >> 8 ) & 0xFF;
+//  AppData.Buff[i++] = temperature & 0xFF;
+//  AppData.Buff[i++] = ( humidity >> 8 ) & 0xFF;
+//  AppData.Buff[i++] = humidity & 0xFF;
+//  AppData.Buff[i++] = batteryLevel;
+//  AppData.Buff[i++] = 0;
+//  AppData.Buff[i++] = 0;
+//  AppData.Buff[i++] = 0;
+  // Send Coffe
+  AppData.Buff[i++] = 0xCA;
+  AppData.Buff[i++] = 0xFE;
 #else  /* not REGION_XX915 */
   AppData.Buff[i++] = AppLedStateOn;
   AppData.Buff[i++] = ( pressure >> 8 ) & 0xFF;
